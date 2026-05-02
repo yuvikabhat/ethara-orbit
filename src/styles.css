@@ -51,8 +51,8 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* MIDNIGHT INDIGO — premium dark SaaS theme */
-:root {
+/* MIDNIGHT INDIGO — premium dark SaaS theme (default = dark) */
+:root, .dark {
   --radius: 1rem;
 
   --background: oklch(0.14 0.02 280);
@@ -115,8 +115,70 @@
   --shadow-card: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 8px 32px -8px oklch(0 0 0 / 0.5);
 }
 
-.dark {
-  /* same — single dark theme */
+/* LIGHT THEME — airy indigo SaaS palette */
+.light {
+  --background: oklch(0.99 0.005 280);
+  --foreground: oklch(0.18 0.03 280);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.03 280);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.03 280);
+
+  --primary: oklch(0.55 0.22 280);
+  --primary-foreground: oklch(0.99 0 0);
+  --primary-glow: oklch(0.65 0.22 295);
+
+  --secondary: oklch(0.96 0.01 280);
+  --secondary-foreground: oklch(0.2 0.03 280);
+
+  --muted: oklch(0.95 0.01 280);
+  --muted-foreground: oklch(0.45 0.03 280);
+
+  --accent: oklch(0.94 0.03 285);
+  --accent-foreground: oklch(0.2 0.05 285);
+
+  --destructive: oklch(0.6 0.24 25);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --success: oklch(0.6 0.16 160);
+  --success-foreground: oklch(0.99 0 0);
+
+  --warning: oklch(0.7 0.16 75);
+  --warning-foreground: oklch(0.15 0.02 280);
+
+  --border: oklch(0.2 0.02 280 / 10%);
+  --input: oklch(0.2 0.02 280 / 12%);
+  --ring: oklch(0.55 0.22 280);
+
+  --chart-1: oklch(0.55 0.22 280);
+  --chart-2: oklch(0.6 0.16 160);
+  --chart-3: oklch(0.7 0.16 75);
+  --chart-4: oklch(0.6 0.18 220);
+  --chart-5: oklch(0.6 0.22 340);
+
+  --sidebar: oklch(0.97 0.008 280);
+  --sidebar-foreground: oklch(0.25 0.03 280);
+  --sidebar-primary: oklch(0.55 0.22 280);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.93 0.03 285);
+  --sidebar-accent-foreground: oklch(0.2 0.05 285);
+  --sidebar-border: oklch(0.2 0.02 280 / 8%);
+  --sidebar-ring: oklch(0.55 0.22 280);
+
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.22 280), oklch(0.65 0.22 310));
+  --gradient-subtle: linear-gradient(180deg, oklch(1 0 0), oklch(0.97 0.008 280));
+  --gradient-glow: radial-gradient(60% 60% at 50% 0%, oklch(0.55 0.22 280 / 0.12), transparent 70%);
+
+  --shadow-sm: 0 1px 2px 0 oklch(0.2 0.03 280 / 0.08);
+  --shadow-md: 0 4px 12px -2px oklch(0.2 0.03 280 / 0.12);
+  --shadow-glow: 0 10px 40px -10px oklch(0.55 0.22 280 / 0.35);
+  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.6) inset, 0 8px 24px -10px oklch(0.2 0.03 280 / 0.12);
+}
+
+.light ::selection {
+  background-color: oklch(0.55 0.22 280 / 0.25);
 }
 
 @layer base {
