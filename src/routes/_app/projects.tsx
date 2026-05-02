@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Plus, MoreVertical, Trash2, Users, Calendar } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, MoreVertical, Trash2, Users, Calendar, UserPlus, X } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -19,9 +21,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useProjects, useTasks } from "@/hooks/useData";
+import { useProjects, useTasks, useMembers, type MemberRow } from "@/hooks/useData";
 import { StatusBadge, PriorityBadge } from "@/components/Badges";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,32 +37,147 @@ const schema = z.object({
 });
 type Values = z.infer<typeof schema>;
 
+function initials(m: MemberRow) {
+  const s = m.full_name || m.email || "U";
+  return s.split(" ").map((x) => x[0]).slice(0, 2).join("").toUpperCase();
+}
+
+function ManageMembersDialog({
+  projectId,
+  projectTitle,
+  open,
+  onOpenChange,
+  members,
+}: {
+  projectId: string;
+  projectTitle: string;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  members: MemberRow[];
+}) {
+  const qc = useQueryClient();
+  const { data: assignments = [] } = useQuery({
+    queryKey: ["project_members", projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_members")
+        .select("id, user_id")
+        .eq("project_id", projectId);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open,
+  });
+
+  const assignedIds = useMemo(() => new Set(assignments.map((a) => a.user_id)), [assignments]);
+
+  const add = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase.from("project_members").insert({ project_id: projectId, user_id: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["project_members", projectId] }); toast.success("Member added"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const removeAssignment = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      const { error } = await supabase.from("project_members").delete().eq("id", assignmentId);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["project_members", projectId] }); toast.success("Member removed"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Manage members · {projectTitle}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2 max-h-[420px] overflow-y-auto -mx-1 px-1">
+          {members.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">No team members yet. Invite people from Team.</p>
+          ) : members.map((m) => {
+            const assignment = assignments.find((a) => a.user_id === m.id);
+            const isAssigned = !!assignment;
+            return (
+              <div key={m.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="h-8 w-8"><AvatarFallback className="text-xs gradient-primary text-primary-foreground">{initials(m)}</AvatarFallback></Avatar>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{m.full_name || m.email}</div>
+                    <div className="text-xs text-muted-foreground truncate">{m.email} · {m.role ?? "member"}</div>
+                  </div>
+                </div>
+                {isAssigned ? (
+                  <Button variant="ghost" size="sm" onClick={() => removeAssignment.mutate(assignment!.id)} disabled={removeAssignment.isPending}>
+                    <X className="h-4 w-4" /> Remove
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={() => add.mutate(m.id)} disabled={add.isPending}>
+                    <UserPlus className="h-4 w-4" /> Add
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Done</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ProjectsPage() {
   const { isAdmin, user } = useAuth();
   const { data: projects = [], isLoading } = useProjects();
   const { data: tasks = [] } = useTasks();
+  const { data: members = [] } = useMembers();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [manageFor, setManageFor] = useState<{ id: string; title: string } | null>(null);
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { status: "active", priority: "medium" },
   });
 
+  // Auto-include creator
+  useEffect(() => {
+    if (open && user && !selectedMemberIds.includes(user.id)) {
+      setSelectedMemberIds((prev) => [...prev, user.id]);
+    }
+  }, [open, user]);
+
   const create = useMutation({
     mutationFn: async (v: Values) => {
-      const { error } = await supabase.from("projects").insert({
+      const { data: project, error } = await supabase.from("projects").insert({
         title: v.title,
         description: v.description || null,
         status: v.status,
         priority: v.priority,
         due_date: v.due_date || null,
         created_by: user?.id ?? null,
-      });
+      }).select("id").single();
       if (error) throw error;
+      if (selectedMemberIds.length > 0 && project) {
+        const rows = selectedMemberIds.map((uid) => ({ project_id: project.id, user_id: uid }));
+        const { error: mErr } = await supabase.from("project_members").insert(rows);
+        if (mErr) throw mErr;
+      }
     },
-    onSuccess: () => { toast.success("Project created"); qc.invalidateQueries({ queryKey: ["projects"] }); setOpen(false); form.reset({ status: "active", priority: "medium" }); },
+    onSuccess: () => {
+      toast.success("Project created");
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      setOpen(false);
+      setSelectedMemberIds([]);
+      form.reset({ status: "active", priority: "medium" });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -75,6 +192,10 @@ function ProjectsPage() {
 
   const filtered = useMemo(() => projects.filter((p) => p.title.toLowerCase().includes(search.toLowerCase())), [projects, search]);
 
+  const toggleMember = (id: string) => {
+    setSelectedMemberIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -85,11 +206,11 @@ function ProjectsPage() {
         <div className="flex gap-2 w-full sm:w-auto">
           <Input placeholder="Search projects…" value={search} onChange={(e) => setSearch(e.target.value)} className="sm:w-64" />
           {isAdmin && (
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSelectedMemberIds([]); }}>
               <DialogTrigger asChild>
                 <Button className="gradient-primary text-primary-foreground shadow-glow hover:opacity-90"><Plus className="h-4 w-4" /> New project</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>Create new project</DialogTitle></DialogHeader>
                 <form onSubmit={form.handleSubmit((v) => create.mutate(v))} className="space-y-4">
                   <div className="space-y-2">
@@ -129,6 +250,30 @@ function ProjectsPage() {
                   <div className="space-y-2">
                     <Label>Due date</Label>
                     <Input type="date" {...form.register("due_date")} />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Team members</Label>
+                      <span className="text-xs text-muted-foreground">{selectedMemberIds.length} selected</span>
+                    </div>
+                    <div className="rounded-lg border border-border/60 max-h-48 overflow-y-auto divide-y divide-border/60">
+                      {members.length === 0 ? (
+                        <p className="text-xs text-muted-foreground p-3">No team members available.</p>
+                      ) : members.map((m) => {
+                        const checked = selectedMemberIds.includes(m.id);
+                        const isMe = m.id === user?.id;
+                        return (
+                          <label key={m.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent/50 transition">
+                            <Checkbox checked={checked} onCheckedChange={() => toggleMember(m.id)} />
+                            <Avatar className="h-7 w-7"><AvatarFallback className="text-[10px] gradient-primary text-primary-foreground">{initials(m)}</AvatarFallback></Avatar>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium truncate">{m.full_name || m.email} {isMe && <span className="text-xs text-muted-foreground">(you)</span>}</div>
+                              <div className="text-xs text-muted-foreground truncate">{m.email}</div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
@@ -171,6 +316,8 @@ function ProjectsPage() {
                       <DropdownMenu>
                         <DropdownMenuTrigger className="opacity-0 group-hover:opacity-100 h-7 w-7 grid place-items-center rounded hover:bg-accent transition"><MoreVertical className="h-4 w-4" /></DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setManageFor({ id: p.id, title: p.title })}><UserPlus className="mr-2 h-4 w-4" /> Manage members</DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => remove.mutate(p.id)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -188,11 +335,26 @@ function ProjectsPage() {
                     <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {projTasks.length} tasks</span>
                     {p.due_date && <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {format(parseISO(p.due_date), "MMM d")}</span>}
                   </div>
+                  {isAdmin && (
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => setManageFor({ id: p.id, title: p.title })}>
+                      <UserPlus className="h-4 w-4" /> Manage members
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );
           })}
         </div>
+      )}
+
+      {manageFor && (
+        <ManageMembersDialog
+          projectId={manageFor.id}
+          projectTitle={manageFor.title}
+          open={!!manageFor}
+          onOpenChange={(v) => { if (!v) setManageFor(null); }}
+          members={members}
+        />
       )}
     </div>
   );
