@@ -25,7 +25,7 @@ function SignupPage() {
 
   const onSubmit = async (values: FormValues) => {
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
       options: {
@@ -35,8 +35,14 @@ function SignupPage() {
     });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Account created — welcome to Ethara");
-    navigate({ to: "/dashboard" });
+    // If email confirmation is required, session is null until the link is clicked
+    if (data.session) {
+      toast.success("Account created — welcome to Ethara");
+      navigate({ to: "/dashboard" });
+    } else {
+      toast.success("Check your email to confirm your account, then sign in.");
+      navigate({ to: "/login" });
+    }
   };
 
   return (

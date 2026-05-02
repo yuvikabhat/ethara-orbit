@@ -1,21 +1,40 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import {
-  LayoutDashboard, FolderKanban, CheckSquare, Users, Settings,
-  LogOut, Search, Bell, ChevronDown,
+  LayoutDashboard,
+  FolderKanban,
+  CheckSquare,
+  Users,
+  Settings,
+  LogOut,
+  Search,
+  Bell,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu,
-  SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
-  SidebarHeader, SidebarFooter,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -64,7 +83,7 @@ function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <div className="px-2 py-2 text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
-          v1.0 · Built on Lovable Cloud
+          v1.0
         </div>
       </SidebarFooter>
     </Sidebar>
@@ -74,7 +93,12 @@ function AppSidebar() {
 function TopBar() {
   const { profile, role, signOut } = useAuth();
   const navigate = useNavigate();
-  const initials = (profile?.full_name || profile?.email || "U").split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase();
+  const initials = (profile?.full_name || profile?.email || "U")
+    .split(" ")
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/70 backdrop-blur px-4 lg:px-6">
@@ -85,15 +109,24 @@ function TopBar() {
       </div>
       <div className="ml-auto flex items-center gap-1">
         <ThemeToggle />
-        <button className="h-9 w-9 grid place-items-center rounded-lg hover:bg-accent transition" aria-label="Notifications">
+        <button
+          className="h-9 w-9 grid place-items-center rounded-lg hover:bg-accent transition"
+          aria-label="Notifications"
+        >
           <Bell className="h-4 w-4" />
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 hover:bg-accent transition">
-            <Avatar className="h-7 w-7"><AvatarFallback className="text-xs gradient-primary text-primary-foreground">{initials}</AvatarFallback></Avatar>
+            <Avatar className="h-7 w-7">
+              <AvatarFallback className="text-xs gradient-primary text-primary-foreground">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
             <div className="hidden sm:flex flex-col items-start leading-tight">
               <span className="text-xs font-medium">{profile?.full_name || profile?.email}</span>
-              <Badge variant="secondary" className="h-4 px-1.5 text-[9px] uppercase tracking-wide">{role}</Badge>
+              <Badge variant="secondary" className="h-4 px-1.5 text-[9px] uppercase tracking-wide">
+                {role}
+              </Badge>
             </div>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </DropdownMenuTrigger>
@@ -104,7 +137,13 @@ function TopBar() {
               <Settings className="mr-2 h-4 w-4" /> Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={async () => { await signOut(); navigate({ to: "/login" }); }} className="text-destructive">
+            <DropdownMenuItem
+              onClick={async () => {
+                await signOut();
+                navigate({ to: "/login" });
+              }}
+              className="text-destructive"
+            >
               <LogOut className="mr-2 h-4 w-4" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
