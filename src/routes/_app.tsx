@@ -1,10 +1,12 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import {
-  LayoutDashboard, FolderKanban, CheckSquare, Users, Settings, Sparkles,
+  LayoutDashboard, FolderKanban, CheckSquare, Users, Settings,
   LogOut, Search, Bell, ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu,
   SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
@@ -32,9 +34,7 @@ function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <Link to="/dashboard" className="flex items-center gap-2 px-2 py-2">
-          <div className="h-8 w-8 rounded-lg gradient-primary grid place-items-center shadow-glow shrink-0">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <Logo size={32} className="shrink-0" />
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-semibold tracking-tight">Ethara</span>
             <span className="text-[10px] text-muted-foreground">Admin Panel</span>
@@ -83,7 +83,8 @@ function TopBar() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Search projects, tasks…" className="pl-9 h-9 bg-card/60" />
       </div>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-1">
+        <ThemeToggle />
         <button className="h-9 w-9 grid place-items-center rounded-lg hover:bg-accent transition" aria-label="Notifications">
           <Bell className="h-4 w-4" />
         </button>

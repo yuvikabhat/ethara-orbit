@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
+import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface Props {
   title: string;
@@ -13,12 +14,11 @@ export function AuthShell({ title, subtitle, children, footer }: Props) {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Left: form */}
-      <div className="flex items-center justify-center px-6 py-12">
+      <div className="flex items-center justify-center px-6 py-12 relative">
+        <div className="absolute top-4 right-4"><ThemeToggle /></div>
         <div className="w-full max-w-md">
-          <Link to="/" className="inline-flex items-center gap-2 mb-10">
-            <div className="h-9 w-9 rounded-xl gradient-primary grid place-items-center shadow-glow">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
-            </div>
+          <Link to="/" className="inline-flex items-center gap-2.5 mb-10">
+            <Logo size={36} />
             <span className="text-lg font-semibold tracking-tight">Ethara</span>
           </Link>
           <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
