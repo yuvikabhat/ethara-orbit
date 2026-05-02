@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
+    "start": "wrangler dev --ip 0.0.0.0 --port ${PORT:-3000} --var SUPABASE_URL:$SUPABASE_URL --var SUPABASE_PUBLISHABLE_KEY:$SUPABASE_PUBLISHABLE_KEY",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
